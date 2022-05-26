@@ -4,11 +4,10 @@
  *
  */
 import {BottomTabHeaderProps, createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
+import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import * as React from 'react';
-import {ColorSchemeName} from 'react-native';
-import Colors from '../constants/color-theme.const';
+import {Alert, ColorSchemeName} from 'react-native';
 import {AuthContext} from '../contexts/auth.context';
 import useColorScheme from '../hooks/use-color-scheme.hook';
 import AuthScreen from '../screens/auth.screen';
@@ -20,13 +19,18 @@ import VaultScreen from '../screens/vault.screen';
 import AccountScreen from '../screens/account.screen';
 import {TabBarIcon} from '../components/tab-bar-icon.component';
 import {Header, HeaderWithSearch} from '../components/header.component';
+import {colorTheme} from '../constants/color-theme.const';
+import {CategoryScreen} from '../screens/category.screen';
+import {SearchContext, searchContextReducer} from '../contexts/search.context';
+import {SearchService} from '../services/search.service';
+import {showError} from '../utils/show-error.util';
+import {ProductScreen} from '../screens/product.screen';
+import {ItemsContext, itemsContextReducer, ItemsContextState} from '../contexts/items.context';
+import {Color} from '../enums/color.enum';
 
 export default function Navigation({colorScheme}: {colorScheme: ColorSchemeName}) {
   return (
-    <NavigationContainer
-      linking={LinkingConfiguration}
-      theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
-    >
+    <NavigationContainer linking={LinkingConfiguration} theme={colorTheme[colorScheme]}>
       <RootNavigator />
     </NavigationContainer>
   );
@@ -39,21 +43,72 @@ export default function Navigation({colorScheme}: {colorScheme: ColorSchemeName}
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  const auth = React.useContext(AuthContext);
+  const authContext = React.useContext(AuthContext);
 
   return (
     <Stack.Navigator>
-      {auth.isLogin ? (
-        <>
-          <Stack.Screen name='Root' component={BottomTabNavigator} options={{headerShown: false}} />
-          <Stack.Group screenOptions={{presentation: 'modal'}}>
-            <Stack.Screen name='Modal' component={ModalScreen} />
-          </Stack.Group>
-        </>
+      {authContext.isLogin ? (
+        <AuthorizedZone></AuthorizedZone>
       ) : (
         <Stack.Screen name='Auth' component={AuthScreen} options={{headerShown: false}} />
       )}
     </Stack.Navigator>
+  );
+}
+
+export function AuthorizedZone() {
+  const [searchContext, dispatchSearch] = React.useReducer(searchContextReducer, {
+    isSearch: false,
+    query: null,
+    results: null,
+    search: (query: string) => {
+      dispatchSearch({type: 'START_SEARCH', query});
+      // SearchService.useSearch(query)
+      //   .then(results => {
+      //     dispatchSearch({type: 'SHOW_RESULTS', results});
+      //     dispatchItems({type: 'SET_ITEMS', items: results});
+      //   })
+      //   .catch(e => showError(e));
+    },
+    cancel: () => {
+      dispatchSearch({type: 'CANCEL'});
+    },
+  });
+
+  const [itemsContext, dispatchItems] = React.useReducer(itemsContextReducer, {
+    items: [],
+    books: [],
+    notebooks: [],
+    update: ({items, books, notebooks}) => {
+      dispatchItems({type: 'SET_ITEMS', items, books, notebooks});
+    },
+  });
+
+  return (
+    <>
+      <Stack.Screen name='Root' component={BottomTabNavigator} options={{headerShown: false}} />
+      <Stack.Group screenOptions={{presentation: 'modal'}}>
+        <Stack.Screen name='Modal' component={ModalScreen} />
+      </Stack.Group>
+      <Stack.Screen
+        name='Category'
+        component={CategoryScreen}
+        options={{
+          header: ({navigation, route}) => (
+            <Header title={(route.params as any).categoryName} navigation={navigation}></Header>
+          ),
+        }}
+      ></Stack.Screen>
+      <Stack.Screen
+        name='Product'
+        component={ProductScreen}
+        options={{
+          header: ({navigation, route}) => (
+            <Header title={(route.params as any).id} navigation={navigation}></Header>
+          ),
+        }}
+      ></Stack.Screen>
+    </>
   );
 }
 
@@ -70,7 +125,8 @@ function BottomTabNavigator() {
     <BottomTab.Navigator
       initialRouteName='Library'
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarActiveTintColor: colorTheme[colorScheme].colors.primary,
+        tabBarStyle: {backgroundColor: colorTheme[colorScheme].colors.background},
       }}
     >
       <BottomTab.Screen
@@ -78,9 +134,12 @@ function BottomTabNavigator() {
         component={LibraryScreen}
         options={{
           title: 'Библиотека',
-          tabBarIcon: ({color}) => <TabBarIcon name='book' color={color} />,
-          header: ({options}: BottomTabHeaderProps) => (
-            <HeaderWithSearch title={options.title}></HeaderWithSearch>
+          tabBarIcon: ({color}) => <TabBarIcon name='book' color={color as Color} />,
+          header: ({options, navigation}: BottomTabHeaderProps) => (
+            <HeaderWithSearch
+              title={options.title}
+              navigation={navigation as any}
+            ></HeaderWithSearch>
           ),
         }}
       />
@@ -89,8 +148,10 @@ function BottomTabNavigator() {
         component={VaultScreen}
         options={{
           title: 'Хранилище',
-          tabBarIcon: ({color}) => <TabBarIcon name='list' color={color} />,
-          header: ({options}: BottomTabHeaderProps) => <Header title={options.title}></Header>,
+          tabBarIcon: ({color}) => <TabBarIcon name='list' color={color as Color} />,
+          header: ({options, navigation}: BottomTabHeaderProps) => (
+            <Header title={options.title} navigation={navigation as any}></Header>
+          ),
         }}
       />
       <BottomTab.Screen
@@ -98,8 +159,10 @@ function BottomTabNavigator() {
         component={AccountScreen}
         options={{
           title: 'Аккаунт',
-          tabBarIcon: ({color}) => <TabBarIcon name='user' color={color} />,
-          header: ({options}: BottomTabHeaderProps) => <Header title={options.title}></Header>,
+          tabBarIcon: ({color}) => <TabBarIcon name='user' color={color as Color} />,
+          header: ({options, navigation}: BottomTabHeaderProps) => (
+            <Header title={options.title} navigation={navigation as any}></Header>
+          ),
         }}
       />
     </BottomTab.Navigator>

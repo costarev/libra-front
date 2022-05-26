@@ -1,18 +1,27 @@
+import {Theme} from '@react-navigation/native';
 import {Color} from './../enums/color.enum';
 
-export default {
+export const colorTheme: {light: Theme; dark: Theme} = {
   light: {
-    text: Color.Black,
-    background: Color.White,
-    tint: Color.Cyan,
-    tabIconDefault: '#ccc',
-    tabIconSelected: Color.Gray,
+    colors: {
+      text: Color.Black,
+      background: Color.White,
+      primary: Color.Cyan,
+      border: '#f0f0f0',
+      card: Color.Gray,
+      notification: Color.White,
+    },
+    dark: false,
   },
   dark: {
-    text: Color.White,
-    background: Color.Black,
-    tint: Color.White,
-    tabIconDefault: '#ccc',
-    tabIconSelected: Color.White,
+    dark: true,
+    colors: {
+      text: Color.White,
+      background: Color.Black,
+      primary: Color.Cyan,
+      border: '#101010',
+      card: Color.Gray,
+      notification: Color.GrayDark,
+    },
   },
 };

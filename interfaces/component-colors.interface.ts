@@ -1,4 +1,6 @@
+import {Color} from './../enums/color.enum';
+
 export interface ComponentColors {
-  readonly backgroundColor: string;
-  readonly color: string;
+  readonly backgroundColor: Color;
+  readonly color: Color;
 }

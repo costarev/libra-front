@@ -1,15 +1,20 @@
+import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import {ParamListBase} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import React from 'react';
-import {StyleSheet, Text} from 'react-native';
+import {Alert, Keyboard, StyleSheet, Text} from 'react-native';
+import {SearchContext} from '../contexts/search.context';
 import {Color} from '../enums/color.enum';
 import {useThemeColor} from '../hooks/use-theme-color.hook';
 import {ThemeProps} from '../interfaces/color-theme.interface';
 import {ComponentColors} from '../interfaces/component-colors.interface';
-import {SimpleButton} from './button.component';
+import {ButtonTheme, SimpleButton} from './button.component';
 import {SimpleTextInput} from './input.component';
 import {View} from './text-and-view.component';
 
 interface HeaderParams {
   title: string;
+  navigation: NativeStackNavigationProp<ParamListBase>;
 }
 
 const themeProps: ThemeProps = {
@@ -30,7 +35,7 @@ function useHeaderThemeColor(): ComponentColors {
   return {color, backgroundColor};
 }
 
-export function Header({title}: HeaderParams) {
+export function Header({title, navigation}: HeaderParams) {
   const {color, backgroundColor} = useHeaderThemeColor();
 
   return (
@@ -45,32 +50,61 @@ export function Header({title}: HeaderParams) {
   );
 }
 
-export function HeaderWithSearch({title}: HeaderParams) {
+export function HeaderWithSearch({title, navigation}: HeaderParams) {
   const {color, backgroundColor} = useHeaderThemeColor();
   const [searchOpened, setSearchOpened] = React.useState(false);
-  const inputRef = React.useRef(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const searchContext = React.useContext(SearchContext);
+  const onSearchButtonClick = () => {
+    Keyboard.dismiss();
+    setSearchQuery('');
+    setSearchOpened(false);
+    navigation.navigate('LibraryMain');
+  };
+  let searchTimeout;
+
+  React.useEffect(() => {
+    if (searchQuery.length) {
+      searchTimeout = setTimeout(() => {
+        searchContext.search(searchQuery);
+      }, 400);
+    } else {
+      searchContext.cancel();
+    }
+
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchQuery]);
 
   return (
     <View
       style={{
         ...styles.container,
         backgroundColor,
+        ...(searchOpened ? styles.containerSearchActive : {}),
       }}
     >
-      <Text style={{...styles.text, color}}>{title}</Text>
-      <View style={styles.searchContainer}>
+      {searchOpened ? <></> : <Text style={{...styles.text, color}}>{title}</Text>}
+      <View style={searchOpened ? styles.searchContainerActive : styles.searchContainer}>
         <SimpleTextInput
           placeholder='Поиск по библиотеке'
           style={searchOpened ? styles.searchInputActive : styles.searchInput}
-          onFocus={() => setSearchOpened(true)}
-          onBlur={() => setSearchOpened(false)}
+          value={searchQuery}
+          onFocus={() => {
+            setSearchOpened(true);
+            navigation.navigate('LibrarySearch');
+          }}
+          onChangeText={setSearchQuery}
         ></SimpleTextInput>
         <SimpleButton
           text='Отменить'
-          onPressFn={() => {
-            // inputRef.current.blur();
-          }}
+          onPressFn={onSearchButtonClick}
           style={searchOpened ? styles.searchCloseButtonActive : styles.searchCloseButton}
+          theme={ButtonTheme.Clear}
+          lightText={true}
         ></SimpleButton>
       </View>
     </View>
@@ -83,6 +117,9 @@ const styles = StyleSheet.create({
     paddingTop: 100,
     justifyContent: 'flex-end',
   },
+  containerSearchActive: {
+    paddingTop: 80,
+  },
   text: {
     fontSize: 36,
     fontWeight: 'bold',
@@ -90,20 +127,24 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flexDirection: 'row',
+    marginTop: 20,
+  },
+  searchContainerActive: {
+    flexDirection: 'row',
   },
   searchInput: {
-    marginTop: 20,
+    flex: 1,
   },
   searchInputActive: {
-    marginTop: 20,
     marginRight: 12,
-    flex: 4,
+    flex: 1,
   },
   searchCloseButton: {
     display: 'none',
   },
   searchCloseButtonActive: {
     display: 'flex',
-    flex: 1,
+    flex: 0,
+    minWidth: 60,
   },
 });

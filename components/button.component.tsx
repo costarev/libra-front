@@ -10,12 +10,14 @@ interface ButtonParams {
   onPressFn: () => void;
   style?: TextStyle | ViewStyle;
   theme?: ButtonTheme;
+  lightText?: boolean;
 }
 
 export enum ButtonTheme {
   PrimaryCyan = 1,
   PrimaryRed,
   Secondary,
+  Clear,
 }
 
 const themeMap: ThemeMap = {
@@ -49,6 +51,23 @@ const themeMap: ThemeMap = {
       dark: Color.GrayDark,
     },
   },
+  [ButtonTheme.Clear]: {
+    text: {
+      light: Color.Cyan,
+      dark: Color.Cyan,
+    },
+    background: {
+      light: Color.White,
+      dark: Color.Black,
+    },
+  },
+};
+
+const underlayColorMap = {
+  [ButtonTheme.PrimaryCyan]: Color.CyanDark,
+  [ButtonTheme.PrimaryRed]: Color.RedDark,
+  [ButtonTheme.Secondary]: Color.CyanLight,
+  [ButtonTheme.Clear]: Color.White,
 };
 
 function useButtonThemeColor(theme: ButtonTheme): ComponentColors {
@@ -58,18 +77,19 @@ function useButtonThemeColor(theme: ButtonTheme): ComponentColors {
   return {color, backgroundColor};
 }
 
-export function SimpleButton({text, style, theme, onPressFn}: ButtonParams) {
+export function SimpleButton({text, style, theme, lightText, onPressFn}: ButtonParams) {
   const mode = theme || ButtonTheme.PrimaryCyan;
   const {color, backgroundColor} = useButtonThemeColor(mode);
+  const underlayColor = underlayColorMap[mode];
 
   return (
     <TouchableHighlight
       activeOpacity={1}
-      underlayColor={Color.CyanDark}
+      underlayColor={underlayColor}
       style={{...styles.button, backgroundColor, ...style}}
       onPress={onPressFn}
     >
-      <Text style={{...styles.text, color}}>{text}</Text>
+      <Text style={{...styles.text, color, ...(lightText ? styles.lightText : {})}}>{text}</Text>
     </TouchableHighlight>
   );
 }
@@ -78,12 +98,14 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 8,
     padding: 12,
-    width: '100%',
     fontSize: 16,
   },
   text: {
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 16,
+  },
+  lightText: {
+    fontWeight: '400',
   },
 });

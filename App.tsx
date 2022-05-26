@@ -6,6 +6,7 @@ import {AuthContext, authContextReducer} from './contexts/auth.context';
 import useColorScheme from './hooks/use-color-scheme.hook';
 import Navigation from './navigation';
 import {AuthService} from './services/auth.service';
+import {showError} from './utils/show-error.util';
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -15,11 +16,11 @@ export default function App() {
     refreshToken: null,
     signIn: async (login: string, password: string) => {
       try {
-        const res = await AuthService.auth(login, password);
+        const res = await AuthService.useAuth(login, password);
 
         dispatch({type: 'SIGN_IN', accessToken: res.accessToken, refreshToken: res.refreshToken});
       } catch (err) {
-        Alert.alert('Произошла ошибка', err);
+        showError(err);
       }
     },
     signOut: () => {

@@ -1,22 +1,23 @@
+import {Color} from './../enums/color.enum';
+import {colorTheme} from './../constants/color-theme.const';
 /**
  * Learn more about Light and Dark modes:
  * https://docs.expo.io/guides/color-schemes/
  */
 
-import {ColorTheme} from './../interfaces/color-theme.interface';
-import Colors from '../constants/color-theme.const';
+import {ColorThemeMap} from './../interfaces/color-theme.interface';
 import useColorScheme from './use-color-scheme.hook';
 
 export function useThemeColor(
-  props: ColorTheme,
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
-): string {
+  themeMap: ColorThemeMap,
+  colorName: keyof typeof colorTheme.light.colors
+): Color {
   const theme = useColorScheme();
-  const colorFromProps = props[theme];
+  const colorFromProps = themeMap[theme];
 
   if (colorFromProps) {
     return colorFromProps;
   } else {
-    return Colors[theme][colorName];
+    return colorTheme[theme].colors[colorName] as Color;
   }
 }

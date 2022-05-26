@@ -5,26 +5,35 @@ const defaultHeaders = {
 };
 
 function makeURL(path: string, query = {}): string {
-  const url = new URL(API_DOMEN + path);
+  const url = API_DOMEN + path;
+  const queryStr = new URLSearchParams(query).toString();
 
-  url.search = new URLSearchParams(query).toString();
-  return url.toString();
+  return queryStr !== '' ? url + '?' + queryStr : url;
 }
 
-export class ApiService {
-  static async get<Res>(path: string, query = {}): Promise<Res> {
+function getAuthHeader(token: string): {Authorization: string} {
+  return {Authorization: `Bearer ${token}`};
+}
+
+export namespace ApiService {
+  export function get<Res>(path: string, query = {}, token?: string): Promise<Res> {
     return fetch(makeURL(path, query), {
       method: 'GET',
-      headers: defaultHeaders,
+      headers: {...defaultHeaders, ...(token ? getAuthHeader(token) : {})},
     })
       .then(a => a.json())
       .then(a => (a.error ? Promise.reject(a.error) : a));
   }
 
-  static async post<Body, Res>(path: string, query = {}, body?: Body): Promise<Res> {
+  export function post<Body, Res>(
+    path: string,
+    query = {},
+    body?: Body,
+    token?: string
+  ): Promise<Res> {
     return fetch(makeURL(path, query), {
       method: 'POST',
-      headers: defaultHeaders,
+      headers: {...defaultHeaders, ...(token ? getAuthHeader(token) : {})},
       body: JSON.stringify(body || {}),
     })
       .then(a => a.json())

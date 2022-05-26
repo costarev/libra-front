@@ -1,12 +1,14 @@
-export interface ColorTheme {
-  readonly light: string;
-  readonly dark: string;
+import {Color} from './../enums/color.enum';
+
+export interface ColorThemeMap {
+  readonly light: Color;
+  readonly dark: Color;
 }
 
 export interface ThemeProps {
-  readonly text: ColorTheme;
-  readonly background: ColorTheme;
-  readonly tint?: ColorTheme;
-  readonly tabIconDefault?: ColorTheme;
-  readonly tabIconSelected?: ColorTheme;
+  readonly text: ColorThemeMap;
+  readonly background: ColorThemeMap;
+  readonly primary?: ColorThemeMap;
+  readonly tabIconDefault?: ColorThemeMap;
+  readonly tabIconSelected?: ColorThemeMap;
 }
